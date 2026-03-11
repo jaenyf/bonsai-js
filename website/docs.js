@@ -15,7 +15,7 @@
   const quickLinks = Array.from(document.querySelectorAll('.docs-quick-link'));
   const progressBar = document.getElementById('docs-progress-bar');
   const backToTop = document.getElementById('docs-backtotop');
-  const hamburger = document.querySelector('.hamburger-btn');
+  const hamburger = document.querySelector('.hamburger-btn') || document.querySelector('.nav-hamburger');
   const overlay = document.querySelector('.sidebar-overlay');
 
   const sectionIndexById = new Map(sections.map((section, index) => [section.id, index]));

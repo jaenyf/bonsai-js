@@ -931,11 +931,11 @@
   }
 
   .hamburger-btn {
-    display: flex;
+    display: none;
   }
 
-  .nav-hamburger {
-    display: none !important;
+  .nav-links.open {
+    display: none;
   }
 
   .sidebar-overlay {
