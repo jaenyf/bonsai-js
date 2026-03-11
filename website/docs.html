@@ -558,7 +558,7 @@ qualifiesForFreeShipping.evaluateSync({
         </div>
 
         <div class="doc-tip">
-          <strong>Two important constraints:</strong> spread values must be iterable, and object keys like <code>__proto__</code>, <code>constructor</code>, and <code>prototype</code> are always blocked. For richer text or array manipulation, prefer the standard-library transforms in the sections below.
+          <strong>Methods vs pipes:</strong> many string operations are available both as method calls and as pipe transforms (via the stdlib). For example, <code>name.startsWith("inv_")</code> and <code>name |&gt; startsWith("inv_")</code> do the same thing. Use method calls for simple, one-off checks. Use pipes when chaining multiple steps — <code>name |&gt; trim |&gt; lower |&gt; startsWith("inv_")</code> reads more clearly than nested method calls.
         </div>
       </div>
 
