@@ -751,10 +751,8 @@
   gap: 10px;
   overflow-x: auto;
   margin: -6px -48px 28px;
-  padding: 14px 48px;
-  background: rgba(10, 10, 15, 0.95);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  padding: 10px 48px 14px;
+  background: #0a0a0f;
 }
 
 .docs-quick-nav::-webkit-scrollbar {
