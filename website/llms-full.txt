@@ -1,0 +1,717 @@
+# Bonsai - Full Documentation
+
+> A safe, fast expression evaluator for JavaScript with pipe operators, optional chaining, and a modular plugin system.
+
+Bonsai lets you safely evaluate expression strings in JavaScript. Think of it as a tiny, sandboxed language for data transformations, business rules, and template logic - without the security risks of running arbitrary code.
+
+- Package: `bonsai-js`
+- ESM-only, TypeScript-first, zero runtime dependencies
+- Fast compiled evaluation with cache support and benchmark regression gates
+
+---
+
+## Installation
+
+```
+bun add bonsai-js
+npm install bonsai-js
+```
+
+Basic usage:
+
+```js
+import { bonsai } from 'bonsai-js'
+
+const expr = bonsai()
+const result = expr.evaluateSync('1 + 2')
+// 3
+```
+
+---
+
+## Quick Start
+
+### Step 1: Simple expressions
+
+Bonsai evaluates expression strings and returns JavaScript values.
+
+```
+2 + 3 * 4       → 14
+"hello"          → "hello"
+true             → true
+```
+
+### Step 2: Context variables
+
+Pass data into expressions via a context object. Its properties become variables.
+
+```
+user.age >= 18   → true      data: { user: { name: "Alice", age: 25 } }
+price * quantity → 29.97     data: { price: 9.99, quantity: 3 }
+```
+
+### Step 3: Add the standard library
+
+Bonsai ships with a modular standard library. Import what you need and register with `use()`.
+
+```js
+import { strings, arrays, math } from 'bonsai-js/stdlib'
+
+const expr = bonsai()
+expr.use(strings) // upper, lower, trim, split, ...
+expr.use(arrays)  // filter, map, sort, unique, ...
+expr.use(math)    // sum, avg, round, clamp, ...
+```
+
+### Step 4: Pipe transforms
+
+The pipe operator `|>` passes a value through a transform. Read it as "then".
+
+```
+name |> trim |> upper   → "DAN"   data: { name: "  dan  " }
+```
+
+### Step 5: Putting it all together
+
+Combine pipes, lambdas, and stdlib transforms into powerful data pipelines.
+
+```
+users |> filter(.age >= 18) |> map(.name) |> join(", ")   → "Alice, Charlie"
+data: { users: [{ name: "Alice", age: 25 }, { name: "Bob", age: 15 }, { name: "Charlie", age: 30 }] }
+```
+
+---
+
+## Core Concepts
+
+### Evaluation model
+
+Every expression goes through three phases:
+
+```
+Source string  →  Parse (AST)  →  Compile (optimize)  →  Evaluate (result)
+```
+
+Compiled expressions are automatically cached. If you evaluate the same string twice, parsing is skipped. For hot paths, use `compile()` to get a reusable object.
+
+### Context objects
+
+The context is a plain object whose properties become variables. Nested data works with dot and bracket notation.
+
+```
+user.name       → "Alice"      data: { user: { name: "Alice", scores: [90, 85, 92] } }
+user.scores[0]  → 90           (same context)
+```
+
+### Transforms vs functions
+
+**Transforms** receive a piped value as their first argument - used with `|>`.
+**Functions** are called by name with parentheses.
+
+```
+"hello" |> upper   → "HELLO"   (upper is a transform - piped value is its input)
+min(5, 3)          → 3         (min is a function - called directly with arguments)
+```
+
+Tip: Does it process a single input? Make it a transform. Does it take multiple independent arguments? Make it a function.
+
+---
+
+## Literals & Types
+
+Bonsai supports these literal types:
+
+```
+42               → 42          (number)
+"hello world"    → "hello world" (string, single or double quotes)
+true             → true        (boolean)
+null             → null
+3.14             → 3.14        (decimals)
+1_000_000        → 1000000     (underscores for readability)
+0xFF             → 255         (hexadecimal)
+0b1010           → 10          (binary)
+1.5e3            → 1500        (scientific notation)
+```
+
+---
+
+## Operators
+
+Operators work like JavaScript, except `==` is always strict - no accidental type coercion.
+
+### Arithmetic
+
+```
+2 + 3 * 4   → 14     (standard precedence - * before +)
+2 ** 10     → 1024   (exponentiation)
+(2 + 3) * 4 → 20    (parentheses override)
+17 % 5      → 2      (remainder)
+```
+
+### Comparison & equality
+
+```
+age >= 18    → true    data: { age: 25 }
+1 == "1"     → false   (strict - no type coercion, ever)
+```
+
+### Conditional logic
+
+```
+score >= 90 ? "A" : "B"   → "A"           (ternary - inline if/else)
+name ?? "Anonymous"        → "Anonymous"   (?? - fallback only for null/undefined)
+name || "Anonymous"        → "Anonymous"   (|| - fallback for any falsy value)
+"" ?? "fallback"           → ""            (?? preserves "", 0, false)
+```
+
+### Membership
+
+```
+"admin" in roles           → true    data: { roles: ["admin", "user"] }
+"hello" in "hello world"   → true    (also works as substring check)
+"guest" not in roles       → true
+```
+
+### Logical
+
+```
+active && verified   → true only if both are true
+!active              → boolean negation
+```
+
+---
+
+## Property Access
+
+Navigate nested objects safely.
+
+### Dot & bracket notation
+
+```
+user.name              → "Alice"
+user.scores[0]         → 90
+data["first-name"]     → "Dan"    (brackets for keys with special characters)
+```
+
+### Optional chaining
+
+`?.` returns `undefined` instead of throwing when accessing properties on `null`.
+
+```
+user?.profile?.avatar               → undefined   data: { user: null }
+user?.profile?.avatar ?? "default.png" → "default.png"   (combine with ?? for fallbacks)
+```
+
+---
+
+## Pipe Operator
+
+Build readable data pipelines by chaining transforms left-to-right. The pipe operator is Bonsai's most powerful feature.
+
+### Basic pipe
+
+The `|>` operator passes the left-hand value as the first argument to the transform on the right.
+
+```
+"hello" |> upper   → "HELLO"
+```
+
+### Chaining
+
+Each transform receives the output of the previous one. Left-to-right data flow.
+
+```
+"  hello  " |> trim |> upper   → "HELLO"
+```
+
+### Pipes with arguments
+
+The piped value is always the first argument. Extra arguments follow in parentheses.
+
+```
+"a,b,c" |> split(",")   → ["a", "b", "c"]
+150 |> clamp(0, 100)     → 100
+```
+
+### Complex pipelines
+
+```
+users |> filter(.age >= 18) |> map(.name) |> join(", ")   → "Alice, Charlie"
+data: { users: [{ name: "Alice", age: 25 }, { name: "Bob", age: 15 }, { name: "Charlie", age: 30 }] }
+```
+
+---
+
+## Collections
+
+Build arrays and objects directly in expressions.
+
+### Array literals
+
+```
+[1, 2, 3]              → [1, 2, 3]
+[0, ...items, 99]      → [0, 1, 2, 3, 99]   (spread operator)
+```
+
+### Object literals
+
+```
+{ name: "Alice", age: 25 }   → { name: "Alice", age: 25 }
+{ name, age }                 → shorthand - values from context
+```
+
+### Method calls
+
+Call safe built-in methods on strings, arrays, and numbers.
+
+```
+"hello world".slice(0, 5)   → "hello"
+[1, 2, 3].includes(2)       → true
+"hello".toUpperCase()        → "HELLO"
+```
+
+---
+
+## Template Literals
+
+Build dynamic strings by embedding variables and expressions.
+
+```
+`Hello ${name}!`             → "Hello world!"      data: { name: "world" }
+`${x} + ${y} = ${x + y}`    → "2 + 3 = 5"         data: { x: 2, y: 3 }
+`${user.name} is ${user.age}` → "Alice is 25"
+```
+
+---
+
+## Lambda Predicates
+
+Concise shorthand for "do this to each item" - extract properties, filter by condition, or test collections.
+
+### Property extraction
+
+A dot prefix (`.name`) means "get this property from each item" - shorthand for `item => item.name`.
+
+```
+users |> map(.name)   → ["Alice", "Bob"]
+users |> map(.age)    → [25, 15]
+data: { users: [{ name: "Alice", age: 25 }, { name: "Bob", age: 15 }] }
+```
+
+### Predicate filtering
+
+Add a condition after the dot (`.age >= 18`) to test each item - shorthand for `item => item.age >= 18`.
+
+```
+users |> filter(.age >= 18)              → [{ name: "Alice", age: 25 }]
+users |> find(.name == "Bob")            → { name: "Bob", age: 15 }
+users |> some(.age >= 18)                → true   (at least one match)
+users |> every(.age >= 18)               → false  (not all match)
+```
+
+### Compound lambdas
+
+Lambdas support method calls and chained property access.
+
+```
+users |> filter(.name.startsWith("A"))   → [{ name: "Alice", age: 25 }]
+```
+
+Note: Lambdas only work as arguments to array transforms. They can't be used as standalone expressions.
+
+---
+
+## API Reference
+
+### bonsai(options?)
+
+Creates a new Bonsai instance. All options are optional.
+
+```js
+import { bonsai } from 'bonsai-js'
+
+// Default instance
+const expr = bonsai()
+
+// Restricted instance
+const safe = bonsai({
+  timeout: 50,
+  maxDepth: 50,
+  maxArrayLength: 10000,
+  allowedProperties: ['user', 'age', 'country', 'plan']
+})
+```
+
+#### Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `timeout` | number | 0 | Evaluation timeout in milliseconds. `0` disables timeout checks |
+| `maxDepth` | number | 100 | Max expression nesting depth |
+| `maxArrayLength` | number | 100000 | Max array literal or expanded spread size |
+| `cacheSize` | number | 256 | Per-instance cache size for compiled expressions and parsed AST reuse |
+| `allowedProperties` | string[] | - | Allowlist checked against every accessed identifier and member name |
+| `deniedProperties` | string[] | - | Denylist checked against every accessed identifier and member name |
+
+### evaluateSync(expression, context?)
+
+Evaluate an expression synchronously and return the result immediately.
+
+```js
+expr.evaluateSync('2 + 3 * 4')                          // 14
+expr.evaluateSync('price * quantity', { price: 9.99, quantity: 3 })  // 29.97
+expr.evaluateSync('name |> trim |> upper', { name: '  dan  ' })     // "DAN"
+expr.evaluateSync('user?.email ?? "no email"', { user: null })       // "no email"
+```
+
+### evaluate(expression, context?)
+
+Evaluate asynchronously and return a Promise. Required when any transform or function is async.
+
+```js
+expr.addTransform('fetchPrice', async (id) => {
+  const res = await fetch(`/api/prices/${id}`)
+  return res.json()
+})
+
+const price = await expr.evaluate('productId |> fetchPrice', { productId: 42 })
+```
+
+Tip: Use `evaluateSync` only when all registered transforms/functions are synchronous. It does not await promises from your extensions.
+
+### compile(expression)
+
+Returns a `CompiledExpression` object with its own `evaluateSync` and `evaluate` methods, plus the optimized `ast` and original `source`.
+
+```js
+const check = expr.compile('user.age >= minAge')
+
+check.evaluateSync({ user: { age: 25 }, minAge: 18 }) // true
+check.evaluateSync({ user: { age: 15 }, minAge: 18 }) // false
+check.evaluateSync({ user: { age: 21 }, minAge: 21 }) // true
+
+check.ast    // optimized AST object
+check.source // "user.age >= minAge"
+```
+
+### validate(expression)
+
+Check if an expression is syntactically valid without evaluating it.
+
+```js
+expr.validate('1 + 2')
+// { valid: true, errors: [], ast: {...} }
+
+expr.validate('1 +')
+// { valid: false, errors: [{message: "...", position: {...}}] }
+```
+
+### addTransform(name, fn)
+
+Register a transform that receives the piped value as its first argument.
+
+```js
+expr.addTransform('double', (val) => val * 2)
+expr.addTransform('repeat', (str, n) => str.repeat(n))
+
+expr.evaluateSync('5 |> double')        // 10
+expr.evaluateSync('"ha" |> repeat(3)')  // "hahaha"
+```
+
+### addFunction(name, fn)
+
+Register a function called directly by name.
+
+```js
+expr.addFunction('greet', (name) => `Hello, ${name}!`)
+expr.addFunction('clamp', (val, min, max) => Math.min(Math.max(val, min), max))
+
+expr.evaluateSync('greet("world")')      // "Hello, world!"
+expr.evaluateSync('clamp(150, 0, 100)')  // 100
+```
+
+### use(plugin)
+
+Register a plugin. A plugin is a function that receives the Bonsai instance.
+
+```js
+expr.use(strings)    // from bonsai-js/stdlib
+expr.use(myPlugin)   // custom plugin
+```
+
+---
+
+## Standard Library
+
+Import individual modules from `bonsai-js/stdlib`.
+
+### Strings
+
+Clean, format, and transform text.
+
+```js
+import { strings } from 'bonsai-js/stdlib'
+expr.use(strings)
+```
+
+| Transform | Example | Result |
+|-----------|---------|--------|
+| `upper` | `"hello" \|> upper` | `"HELLO"` |
+| `lower` | `"HELLO" \|> lower` | `"hello"` |
+| `trim` | `"  hi  " \|> trim` | `"hi"` |
+| `split(sep)` | `"a,b,c" \|> split(",")` | `["a", "b", "c"]` |
+| `replace(s, r)` | `"hello" \|> replace("l", "r")` | `"herro"` |
+| `startsWith(s)` | `"hello" \|> startsWith("he")` | `true` |
+| `endsWith(s)` | `"hello" \|> endsWith("lo")` | `true` |
+| `includes(s)` | `"hello" \|> includes("ell")` | `true` |
+| `padStart(len, fill)` | `"42" \|> padStart(5, "0")` | `"00042"` |
+| `padEnd(len, fill)` | `"hi" \|> padEnd(5, ".")` | `"hi..."` |
+
+Pipeline examples:
+
+```
+name |> trim |> lower                   → "alice"       data: { name: "  Alice  " }
+title |> lower |> replace(" ", "-")     → "my-post-title"  data: { title: "My Post Title" }
+```
+
+### Arrays
+
+Filter, map, sort, and aggregate collections.
+
+```js
+import { arrays } from 'bonsai-js/stdlib'
+expr.use(arrays)
+```
+
+#### Basic transforms
+
+| Transform | Example | Result |
+|-----------|---------|--------|
+| `count` | `[1, 2, 3] \|> count` | `3` |
+| `first` | `[10, 20, 30] \|> first` | `10` |
+| `last` | `[10, 20, 30] \|> last` | `30` |
+| `reverse` | `[1, 2, 3] \|> reverse` | `[3, 2, 1]` |
+| `flatten` | `[[1, 2], [3, 4]] \|> flatten` | `[1, 2, 3, 4]` |
+| `unique` | `[1, 2, 2, 3] \|> unique` | `[1, 2, 3]` |
+| `join(sep)` | `["a", "b"] \|> join("-")` | `"a-b"` |
+| `sort` | `[3, 1, 2] \|> sort` | `[1, 2, 3]` |
+
+#### Higher-order transforms (with lambda predicates)
+
+| Transform | Example | Result |
+|-----------|---------|--------|
+| `filter(pred)` | `users \|> filter(.age >= 18)` | Array of matching items |
+| `map(fn)` | `users \|> map(.name)` | Array of extracted values |
+| `find(pred)` | `users \|> find(.age >= 18)` | First matching item |
+| `some(pred)` | `users \|> some(.age >= 18)` | `true` if any match |
+| `every(pred)` | `users \|> every(.age >= 18)` | `true` if all match |
+
+Pipeline examples:
+
+```
+users |> filter(.age >= 18) |> map(.name)    → ["Alice", "Charlie"]   (get names of adult users)
+orders |> some(.total > 100)                  → true                   (check if any order exceeds $100)
+products |> map(.category) |> unique |> sort  → ["electronics", "food", "toys"]
+```
+
+### Math
+
+Round, clamp, sum, and average.
+
+```js
+import { math } from 'bonsai-js/stdlib'
+expr.use(math)
+```
+
+#### Transforms
+
+| Transform | Example | Result |
+|-----------|---------|--------|
+| `round` | `3.7 \|> round` | `4` |
+| `floor` | `3.7 \|> floor` | `3` |
+| `ceil` | `3.2 \|> ceil` | `4` |
+| `abs` | `-42 \|> abs` | `42` |
+| `sum` | `[10, 20, 30] \|> sum` | `60` |
+| `avg` | `[10, 20, 30] \|> avg` | `20` |
+| `clamp(min, max)` | `150 \|> clamp(0, 100)` | `100` |
+
+#### Functions
+
+| Function | Example | Result |
+|----------|---------|--------|
+| `min(a, b)` | `min(5, 3)` | `3` |
+| `max(a, b)` | `max(5, 3)` | `5` |
+
+Pipeline examples:
+
+```
+products |> map(.price) |> avg |> round   → 25    (average price, rounded)
+orders |> map(.total) |> sum              → 347.50 (sum all order totals)
+```
+
+### Types
+
+Check what kind of value you have and convert between types.
+
+```js
+import { types } from 'bonsai-js/stdlib'
+expr.use(types)
+```
+
+| Transform | Example | Result |
+|-----------|---------|--------|
+| `isString` | `"hello" \|> isString` | `true` |
+| `isNumber` | `42 \|> isNumber` | `true` |
+| `isArray` | `[1, 2] \|> isArray` | `true` |
+| `isNull` | `null \|> isNull` | `true` |
+| `toBool` | `1 \|> toBool` | `true` |
+| `toNumber` | `"42" \|> toNumber` | `42` |
+| `toString` | `42 \|> toString` | `"42"` |
+
+### Dates
+
+Get the current time, format dates, and calculate differences.
+
+```js
+import { dates } from 'bonsai-js/stdlib'
+expr.use(dates)
+```
+
+| Type | Name | Example | Result |
+|------|------|---------|--------|
+| Function | `now()` | `now()` | Current timestamp (ms) |
+| Transform | `formatDate(fmt)` | `now() \|> formatDate("YYYY-MM-DD")` | `"2026-03-07"` |
+| Transform | `diffDays(other)` | `ts1 \|> diffDays(ts2)` | Absolute day difference |
+
+Format patterns: `YYYY` (year), `MM` (month), `DD` (day), `HH` (hours), `mm` (minutes), `ss` (seconds).
+
+---
+
+## Writing Plugins
+
+A plugin is a function that receives a Bonsai instance and extends it with transforms or functions.
+
+### Plugin structure
+
+```js
+import type { BonsaiPlugin } from 'bonsai-js'
+
+const myPlugin: BonsaiPlugin = (expr) => {
+  expr.addTransform('double', (val) => val * 2)
+  expr.addFunction('greet', (name) => `Hello, ${name}!`)
+}
+```
+
+### Registering plugins
+
+```js
+const expr = bonsai()
+expr.use(myPlugin)
+
+expr.evaluateSync('5 |> double')       // 10
+expr.evaluateSync('greet("world")')    // "Hello, world!"
+```
+
+### Real-world example: currency plugin
+
+```js
+const currency: BonsaiPlugin = (expr) => {
+  expr.addTransform('usd', (val) => `$${Number(val).toFixed(2)}`)
+  expr.addTransform('eur', (val) => `${Number(val).toFixed(2)} EUR`)
+  expr.addFunction('discount', (price, pct) => price * (1 - pct / 100))
+}
+
+const expr = bonsai()
+expr.use(currency)
+
+expr.evaluateSync('price |> usd', { price: 29.9 })
+// "$29.90"
+
+expr.evaluateSync('discount(price, 20) |> usd', { price: 100 })
+// "$80.00"
+```
+
+Tip: Keep plugins focused on a single domain. A "currency" plugin, a "validation" plugin, etc.
+
+---
+
+## Safety & Sandboxing
+
+Bonsai is designed to be safe for evaluating untrusted expressions.
+
+### What's blocked
+
+Bonsai blocks access to `__proto__`, `constructor`, and `prototype` by default. Expressions cannot access the global scope, require modules, or execute arbitrary code.
+
+### Property restrictions
+
+Use `allowedProperties` (whitelist) or `deniedProperties` (blacklist) to control which member and method names expressions can access. These apply to member access (`obj.name`) and method calls (`str.slice()`), not root identifiers (`name`) or object-literal keys (`{ name: value }`). Numeric array indices (e.g., `items[0]`) bypass allow/deny lists automatically.
+
+```js
+const expr = bonsai({
+  allowedProperties: ['user', 'name', 'plan']
+})
+
+expr.evaluateSync('user.name', { user: { name: "Alice", plan: "pro" } })
+// "Alice" - root identifier 'user' is always accessible; 'name' is allowed as a member
+
+expr.evaluateSync('user.secret', { user: { secret: "xyz" } })
+// Error: "secret" is not in allowed properties
+```
+
+### Defense-in-depth hardening
+
+Beyond configurable property restrictions, Bonsai applies several automatic protections:
+
+- **Own-property-only lookup**: Root identifiers are resolved via `Object.hasOwn()`, so context prototype chains cannot leak inherited properties into expressions.
+- **Null-prototype object literals**: Objects created inside expressions use `Object.create(null)`, preventing prototype pollution through expression-constructed objects.
+- **Receiver-aware method validation**: Method calls validate that the receiver is a safe type (string, number, array, or plain object). Unexpected receiver types throw `BonsaiTypeError`.
+- **Numeric index bypass**: Canonical numeric array indices automatically bypass allow/deny lists.
+- **Sync Promise guard**: `evaluateSync()` detects `Promise` return values from transforms, functions, and methods, and throws an actionable `BonsaiTypeError` naming the offending call and suggesting `evaluate()`.
+
+### Resource limits
+
+```js
+const expr = bonsai({
+  timeout: 50,          // cooperative timeout in ms
+  maxDepth: 50,         // max nesting depth
+  maxArrayLength: 10000 // max array size
+})
+```
+
+Tip: For user-facing applications where users write their own expressions, start with a minimal context object, use `allowedProperties`, and set all three limits: `timeout`, `maxDepth`, and `maxArrayLength`.
+
+---
+
+## Performance Tips
+
+Bonsai is designed for high throughput. On Apple Silicon (M-series), with LRU cache enabled:
+
+| Expression | ops/sec |
+|------------|---------|
+| Simple literal (`42`) | ~1,089,000 |
+| Arithmetic (`1 + 2 * 3`) | ~1,057,000 |
+| Property access (`user.name`) | ~996,000 |
+| Comparison with context | ~994,000 |
+| Transform pipeline | ~1,005,000 |
+| Compiled (evaluate only) | ~981,000 |
+
+### Tips
+
+**Use `compile()` for repeated expressions.** If the same expression runs in a loop or on every request, compile it once and reuse the compiled object.
+
+```js
+const rule = expr.compile('user.age >= 18 && user.verified')
+for (const user of users) {
+  if (rule.evaluateSync({ user })) { /* ... */ }
+}
+```
+
+**Use `evaluateSync` over `evaluate`.** The sync path avoids Promise overhead. Only use `evaluate` when you have async transforms.
+
+**Choose an appropriate cache size.** The default (256) works well for most applications. Increase for thousands of unique expressions, decrease for memory-constrained environments.
+
+```js
+const expr = bonsai({ cacheSize: 1024 }) // high-volume
+const expr = bonsai({ cacheSize: 64 })   // memory-constrained
+```

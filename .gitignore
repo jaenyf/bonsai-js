@@ -1,0 +1,6 @@
+node_modules
+dist
+*.tsbuildinfo
+bun.lock
+website/*.bundle.js
+.worktrees
