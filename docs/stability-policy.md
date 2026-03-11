@@ -7,8 +7,8 @@ Bonsai follows Semantic Versioning for the documented package entrypoints:
 
 ## Compatibility Guarantees
 
-- Supported runtimes are Node.js 18 and newer, plus current Bun releases.
-- CI smoke-tests the packed npm artifact on Node 18, 20, and 22.
+- Supported runtimes are Node.js 20 and newer, plus current Bun releases.
+- CI smoke-tests the packed npm artifact on Node 20 and 22.
 - The root runtime exports and stdlib subpath exports are treated as stable public API.
 - Documented expression syntax and evaluator behavior are covered by semver.
 

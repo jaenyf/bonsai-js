@@ -10,7 +10,7 @@ cd core
 bun install
 ```
 
-Requires [Bun](https://bun.sh/) and Node.js 18+.
+Requires [Bun](https://bun.sh/) and Node.js 20+.
 
 ## Development Commands
 

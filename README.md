@@ -467,8 +467,8 @@ Benchmark guidance and current numbers live in the website docs and benchmark su
 
 Bonsai follows SemVer for the documented package entrypoints `bonsai-js` and `bonsai-js/stdlib`.
 
-- Supported runtimes are Node 18+ and current Bun releases.
-- The packed npm artifact is smoke-tested on Node 18, 20, and 22.
+- Supported runtimes are Node 20+ and current Bun releases.
+- The packed npm artifact is smoke-tested on Node 20 and 22.
 - Internal modules under `src/*` are not public API.
 
 See [stability policy](./docs/stability-policy.md) for the compatibility boundary and release rules.
