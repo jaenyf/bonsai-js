@@ -92,29 +92,29 @@
         <article class="use-case-card">
           <span class="use-case-kicker">Pricing &amp; Eligibility</span>
           <h3>Business Rules</h3>
-          <p>Let teams ship discount, eligibility, and routing rules without embedding arbitrary JavaScript in your app.</p>
-          <code class="use-case-code">order.total &gt;= 100 ? "free" : "paid"</code>
+          <p>A pricing rule changes every quarter. Right now that's a ticket, a PR, and a deploy. With Bonsai it's a text field in your admin panel that evaluates at runtime.</p>
+          <code class="use-case-code">order.total &gt;= freeShippingThreshold &amp;&amp; customer.tier == "gold"</code>
         </article>
 
         <article class="use-case-card">
           <span class="use-case-kicker">Search &amp; Admin UIs</span>
           <h3>Filter Builders</h3>
-          <p>Power saved filters, dashboards, and rule editors with a readable expression syntax instead of one-off query parsers.</p>
-          <code class="use-case-code">users |&gt; filter(.age &gt;= 18)</code>
+          <p>Users want saved views like "active this week" or "high-value pending." Store the condition as a string, evaluate it per row — no custom query parser needed.</p>
+          <code class="use-case-code">orders |&gt; filter(.status == "pending" &amp;&amp; .total &gt; 500)</code>
         </article>
 
         <article class="use-case-card">
-          <span class="use-case-kicker">Formatting Pipelines</span>
-          <h3>Templates &amp; Data Shaping</h3>
-          <p>Transform API payloads, email snippets, and template fields with null-safe access and a composable stdlib.</p>
-          <code class="use-case-code">name |&gt; trim |&gt; upper</code>
+          <span class="use-case-kicker">Notifications &amp; Emails</span>
+          <h3>Templates</h3>
+          <p>Your notification service pulls a template from the database and fills it with user data. The expressions live alongside the copy, not buried in application code.</p>
+          <code class="use-case-code">`Hi ${user.firstName}, your order ${order.id} ships ${shipDate |&gt; formatDate}`</code>
         </article>
 
         <article class="use-case-card">
-          <span class="use-case-kicker">User-authored Logic</span>
-          <h3>Safe Custom Conditions</h3>
-          <p>Expose useful expression power to trusted users without giving them arbitrary code execution or raw object access.</p>
-          <code class="use-case-code">user?.plan == "pro" &amp;&amp; quota &gt; 0</code>
+          <span class="use-case-kicker">Platforms &amp; Builders</span>
+          <h3>User-Authored Logic</h3>
+          <p>You're building a form builder, workflow tool, or internal platform where users configure conditions. They need expression power — you need sandbox controls.</p>
+          <code class="use-case-code">field.country == "US" ? "required" : "hidden"</code>
         </article>
       </div>
     </div>
