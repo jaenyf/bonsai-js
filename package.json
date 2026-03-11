@@ -42,6 +42,7 @@
     "lint": "oxlint --deny-warnings src tests scripts",
     "typecheck": "tsc -p tsconfig.typecheck.json --noEmit",
     "build:website": "bun website/build.ts",
+    "prepare": "lefthook install",
     "prepublishOnly": "bun run lint && bun run typecheck && bun run test && bun run bench:gate && bun run check:package"
   },
   "keywords": ["expression", "evaluator", "parser", "safe", "sandbox", "template", "pipe", "transform", "formula", "dsl", "ast", "jexl", "compiler"],
@@ -53,6 +54,7 @@
   "devDependencies": {
     "@types/node": "^25.4.0",
     "jexl": "^2.3.0",
+    "lefthook": "^2.1.3",
     "oxlint": "^1.51.0",
     "tsdown": "^0.21.0",
     "typescript": "^5.9.3",
